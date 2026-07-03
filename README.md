@@ -10,7 +10,7 @@ Blender can be controlled using program scripts written in Python. Recent OpenAI
 
 # Note
 
-This fork targets Blender 4.2 and OpenAI's Responses API. It defaults to `gpt-5.5` and also offers lower-cost GPT-5 family variants in the add-on panel.
+This fork targets Blender 4.2 and OpenAI's Responses API. It defaults to `gpt-4.1`, with other model choices and a custom model field available in the add-on panel.
 
 ## Installation
 

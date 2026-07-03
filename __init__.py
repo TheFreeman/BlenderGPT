@@ -156,6 +156,10 @@ class GPT4_PT_Panel(bpy.types.Panel):
         model_row = column.row()
         model_row.scale_y = 1.8
         model_row.prop(context.scene, "gpt4_model", text="")
+        if context.scene.gpt4_model == "custom":
+            custom_model_row = column.row()
+            custom_model_row.scale_y = 1.4
+            custom_model_row.prop(context.scene, "gpt4_custom_model", text="")
 
         column.label(text="Enter your message:")
         input_row = column.row()
@@ -312,6 +316,8 @@ class GPT4_OT_Execute(bpy.types.Operator):
             message = str(e)
             if "OpenAI API error 401" in message:
                 message += f" Used key from {api_key_source}: {api_key_label(api_key)}"
+            if "OpenAI API error 403" in message and "does not have access to model" in message:
+                message += " Select another GPT Model, or choose Custom and enter a model ID enabled for this project."
             self.report({'ERROR'}, message)
             return {'CANCELLED'}
         finally:

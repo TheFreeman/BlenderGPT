@@ -33,11 +33,19 @@ def init_props(chat_message_type):
         name="GPT Model",
         description="Select the GPT model to use",
         items=[
-            ("gpt-5.5", "GPT-5.5", "Best quality for Blender Python generation"),
-            ("gpt-5.4", "GPT-5.4", "Lower-cost GPT-5 family model"),
-            ("gpt-5.4-mini", "GPT-5.4 Mini", "Faster and cheaper for simpler tasks"),
+            ("gpt-4.1", "GPT-4.1", "High quality code generation"),
+            ("gpt-4.1-mini", "GPT-4.1 Mini", "Faster and cheaper code generation"),
+            ("gpt-4o", "GPT-4o", "General purpose model"),
+            ("gpt-4o-mini", "GPT-4o Mini", "Fast and low cost"),
+            ("custom", "Custom", "Use the custom model ID below"),
         ],
-        default="gpt-5.5",
+        default="gpt-4.1",
+    )
+    bpy.types.Scene.gpt4_custom_model = bpy.props.StringProperty(
+        name="Custom Model",
+        description="Optional model ID to use when GPT Model is set to Custom.",
+        default="",
+        maxlen=128,
     )
     bpy.types.Scene.gpt4_chat_input = bpy.props.StringProperty(
         name="Message",
@@ -64,6 +72,7 @@ def clear_props():
     for prop_name in (
         "gpt4_chat_history",
         "gpt4_model",
+        "gpt4_custom_model",
         "gpt4_chat_input",
         "gpt4_api_key_override",
         "gpt4_use_clipboard_api_key",
@@ -138,7 +147,7 @@ def generate_blender_code(prompt, chat_history, context, system_prompt, api_key)
     )
 
     payload = {
-        "model": context.scene.gpt4_model,
+        "model": context.scene.gpt4_custom_model.strip() if context.scene.gpt4_model == "custom" else context.scene.gpt4_model,
         "input": messages,
         "max_output_tokens": 2000,
         "reasoning": {"effort": "low"},
