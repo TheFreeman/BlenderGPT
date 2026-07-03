@@ -1,36 +1,28 @@
-import sys
 import os
 import bpy
 import bpy.props
-import re
-
-# Add the 'libs' folder to the Python path
-libs_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lib")
-if libs_path not in sys.path:
-    sys.path.append(libs_path)
-
-import openai
 
 from .utilities import *
 bl_info = {
-    "name": "GPT-4 Blender Assistant",
-    "blender": (2, 82, 0),
+    "name": "GPT Blender Assistant",
+    "blender": (4, 2, 0),
     "category": "Object",
     "author": "Aarya (@gd3kr)",
-    "version": (2, 0, 0),
-    "location": "3D View > UI > GPT-4 Blender Assistant",
-    "description": "Generate Blender Python code using OpenAI's GPT-4 to perform various tasks.",
+    "version": (2, 1, 0),
+    "location": "3D View > UI > GPT Blender Assistant",
+    "description": "Generate Blender Python code using OpenAI GPT models to perform various tasks.",
     "warning": "",
     "wiki_url": "",
     "tracker_url": "",
 }
 
-system_prompt = """You are an assistant made for the purposes of helping the user with Blender, the 3D software. 
+system_prompt = """You generate Python code for Blender 4.2.
 - Respond with your answers in markdown (```). 
 - Preferably import entire modules instead of bits. 
 - Do not perform destructive operations on the meshes. 
 - Do not use cap_ends. Do not do more than what is asked (setting up render settings, adding cameras, etc)
 - Do not respond with anything that is not Python code.
+- Use APIs that are valid in Blender 4.2.
 
 Example:
 
@@ -98,11 +90,11 @@ class GPT4_OT_ShowCode(bpy.types.Operator):
         return {'FINISHED'}
 
 class GPT4_PT_Panel(bpy.types.Panel):
-    bl_label = "GPT-4 Blender Assistant"
+    bl_label = "GPT Blender Assistant"
     bl_idname = "GPT4_PT_Panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = 'GPT-4 Assistant'
+    bl_category = 'GPT Assistant'
 
     def draw(self, context):
         layout = self.layout
@@ -159,45 +151,45 @@ class GPT4_OT_Execute(bpy.types.Operator):
     )
 
     def execute(self, context):
-        openai.api_key = get_api_key(context, __name__)
-        # if null then set to env key
-        if not openai.api_key:
-            openai.api_key = os.getenv("OPENAI_API_KEY")
+        api_key = get_api_key(context, __name__)
+        if not api_key:
+            api_key = os.getenv("OPENAI_API_KEY")
 
-        if not openai.api_key:
+        if not api_key:
             self.report({'ERROR'}, "No API key detected. Please set the API key in the addon preferences.")
+            return {'CANCELLED'}
+
+        prompt = context.scene.gpt4_chat_input.strip()
+        if not prompt:
+            self.report({'ERROR'}, "Please enter a message first.")
             return {'CANCELLED'}
 
         context.scene.gpt4_button_pressed = True
         bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-        
-        blender_code = generate_blender_code(context.scene.gpt4_chat_input, context.scene.gpt4_chat_history, context, system_prompt)
 
-        message = context.scene.gpt4_chat_history.add()
-        message.type = 'user'
-        message.content = context.scene.gpt4_chat_input
+        try:
+            blender_code = generate_blender_code(prompt, context.scene.gpt4_chat_history, context, system_prompt, api_key)
+            if not blender_code:
+                self.report({'ERROR'}, "The model did not return executable Python code.")
+                return {'CANCELLED'}
 
-        # Clear the chat input field
-        context.scene.gpt4_chat_input = ""
+            message = context.scene.gpt4_chat_history.add()
+            message.type = 'user'
+            message.content = prompt
 
-    
-        if blender_code:
             message = context.scene.gpt4_chat_history.add()
             message.type = 'assistant'
             message.content = blender_code
 
             global_namespace = globals().copy()
-    
-        try:
             exec(blender_code, global_namespace)
         except Exception as e:
-            self.report({'ERROR'}, f"Error executing generated code: {e}")
-            context.scene.gpt4_button_pressed = False
+            self.report({'ERROR'}, str(e))
             return {'CANCELLED'}
+        finally:
+            context.scene.gpt4_button_pressed = False
 
-        
-
-        context.scene.gpt4_button_pressed = False
+        context.scene.gpt4_chat_input = ""
         return {'FINISHED'}
 
 
@@ -219,6 +211,7 @@ class GPT4AddonPreferences(bpy.types.AddonPreferences):
         layout.prop(self, "api_key")
 
 def register():
+    bpy.utils.register_class(GPT4ChatMessage)
     bpy.utils.register_class(GPT4AddonPreferences)
     bpy.utils.register_class(GPT4_OT_Execute)
     bpy.utils.register_class(GPT4_PT_Panel)
@@ -232,15 +225,16 @@ def register():
 
 
 def unregister():
+    clear_props()
+    bpy.types.VIEW3D_MT_mesh_add.remove(menu_func)
+
     bpy.utils.unregister_class(GPT4AddonPreferences)
     bpy.utils.unregister_class(GPT4_OT_Execute)
     bpy.utils.unregister_class(GPT4_PT_Panel)
     bpy.utils.unregister_class(GPT4_OT_ClearChat)
     bpy.utils.unregister_class(GPT4_OT_ShowCode)
-    bpy.utils.unegister_class(GPT4_OT_DeleteMessage)
-
-    bpy.types.VIEW3D_MT_mesh_add.remove(menu_func)
-    clear_props()
+    bpy.utils.unregister_class(GPT4_OT_DeleteMessage)
+    bpy.utils.unregister_class(GPT4ChatMessage)
 
 
 if __name__ == "__main__":

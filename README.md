@@ -6,35 +6,33 @@
 
 
 
-Blender can be controlled using program scripts written in Python. Recent Large Language Models like OpenAI's GPT-4 can generate these Python scripts from simple English and execute them. This plugin provides an easy to use interface that integrates OpenAI's GPT-4/GPT-3.5 right in the UI, allowing you to use natural language commands to control Blender.
+Blender can be controlled using program scripts written in Python. Recent OpenAI GPT models can generate these Python scripts from simple English and execute them. This plugin provides an easy to use interface that integrates OpenAI GPT models right in the UI, allowing you to use natural language commands to control Blender.
 
 # Note
 
-Access to GPT-4 in this addon can ONLY be obtained through the OpenAI waitlist (https://openai.com/waitlist/gpt-4-api), which in turn grants your account access to this model via the API.
-
-
-**GPT-4 access via the API is different from GPT-4 access via ChatGPT-Plus ($20/month subscription). This addon will only work with GPT-4 if you have been accepted into the waitlist (https://openai.com/waitlist/gpt-4-api) and have access to the API via your OpenAI API key**
+This fork targets Blender 4.2 and OpenAI's Responses API. It defaults to `gpt-5.5` and also offers lower-cost GPT-5 family variants in the add-on panel.
 
 ## Installation
 
 1. Clone this repository by clicking `Code > Download ZIP` on GitHub
 2. Open Blender, go to `Edit > Preferences > Add-ons > Install`
 3. Select the downloaded ZIP file and click `Install Add-on`
-4. Enable the add-on by checking the checkbox next to `GPT-4 Blender Assistant`
+4. Enable the add-on by checking the checkbox next to `GPT Blender Assistant`
 5. Paste your OpenAI API key in the Addon preferences menu.
 5. To view the code generations in realtime, go to `Window > Toggle System Console`
 
 ## Usage
 
-1. In the 3D View, open the sidebar (press `N` if not visible) and locate the `GPT-4 Assistant` tab
+1. In the 3D View, open the sidebar (press `N` if not visible) and locate the `GPT Assistant` tab
 2. Type a natural language command in the input field, e.g., "create a cube at the origin"
 3. Click the `Execute` button to generate and execute the Blender Python code
 
 
 ## Requirements
 
-- Blender 3.1 or later
+- Blender 4.2 or later
 - OpenAI API key (Accessible at https://platform.openai.com/account/api-keys)
+- No third-party Python package install is required; the add-on calls the OpenAI Responses API directly with Blender's bundled Python.
 
 
 ## Demonstration
