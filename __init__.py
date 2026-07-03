@@ -165,8 +165,10 @@ class GPT4_OT_Execute(bpy.types.Operator):
 
     def execute(self, context):
         api_key = normalize_api_key(get_api_key(context, __name__))
+        api_key_source = "add-on preferences"
         if not api_key:
             api_key = normalize_api_key(os.getenv("OPENAI_API_KEY"))
+            api_key_source = "OPENAI_API_KEY"
 
         if not api_key:
             self.report({'ERROR'}, "No API key detected. Please set the API key in the addon preferences.")
@@ -197,7 +199,10 @@ class GPT4_OT_Execute(bpy.types.Operator):
             global_namespace = globals().copy()
             exec(blender_code, global_namespace)
         except Exception as e:
-            self.report({'ERROR'}, str(e))
+            message = str(e)
+            if "OpenAI API error 401" in message:
+                message += f" Used key from {api_key_source}: {api_key_fingerprint(api_key)}"
+            self.report({'ERROR'}, message)
             return {'CANCELLED'}
         finally:
             context.scene.gpt4_button_pressed = False

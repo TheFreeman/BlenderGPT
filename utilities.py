@@ -18,6 +18,14 @@ def normalize_api_key(api_key):
     return re.sub(r"\s+", "", api_key or "")
 
 
+def api_key_fingerprint(api_key):
+    if not api_key:
+        return "empty"
+    if len(api_key) <= 8:
+        return "***" + api_key[-2:]
+    return api_key[:7] + "..." + api_key[-4:]
+
+
 def init_props(chat_message_type):
     bpy.types.Scene.gpt4_chat_history = bpy.props.CollectionProperty(type=chat_message_type)
     bpy.types.Scene.gpt4_model = bpy.props.EnumProperty(
@@ -80,7 +88,12 @@ def _create_response(api_key, payload):
             return json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as error:
         details = error.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"OpenAI API error {error.code}: {details}") from error
+        try:
+            error_data = json.loads(details)
+            message = error_data.get("error", {}).get("message", details)
+        except json.JSONDecodeError:
+            message = details
+        raise RuntimeError(f"OpenAI API error {error.code}: {message}") from error
     except urllib.error.URLError as error:
         raise RuntimeError(f"Could not connect to OpenAI API: {error.reason}") from error
 
