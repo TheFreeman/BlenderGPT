@@ -317,7 +317,7 @@ class GPT4_OT_Execute(bpy.types.Operator):
             if "OpenAI API error 401" in message:
                 message += f" Used key from {api_key_source}: {api_key_label(api_key)}"
             if "OpenAI API error 403" in message and "does not have access to model" in message:
-                message += " Select another GPT Model, or choose Custom and enter a model ID enabled for this project."
+                message += " The request format is valid, but this OpenAI project is not allowed to use that model. Select a fallback model or enable access for the project behind this API key."
             self.report({'ERROR'}, message)
             return {'CANCELLED'}
         finally:

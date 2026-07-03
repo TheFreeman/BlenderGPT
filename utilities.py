@@ -33,13 +33,17 @@ def init_props(chat_message_type):
         name="GPT Model",
         description="Select the GPT model to use",
         items=[
+            ("gpt-5.5", "GPT-5.5", "Best quality reasoning model; requires project access"),
+            ("gpt-5.5-pro", "GPT-5.5 Pro", "Highest quality GPT-5.5 variant; requires project access"),
+            ("gpt-5.4", "GPT-5.4", "Lower-cost GPT-5 reasoning model"),
+            ("gpt-5.4-mini", "GPT-5.4 Mini", "Lower-latency GPT-5 reasoning model"),
             ("gpt-4.1", "GPT-4.1", "High quality code generation"),
             ("gpt-4.1-mini", "GPT-4.1 Mini", "Faster and cheaper code generation"),
             ("gpt-4o", "GPT-4o", "General purpose model"),
             ("gpt-4o-mini", "GPT-4o Mini", "Fast and low cost"),
             ("custom", "Custom", "Use the custom model ID below"),
         ],
-        default="gpt-4.1",
+        default="gpt-5.5",
     )
     bpy.types.Scene.gpt4_custom_model = bpy.props.StringProperty(
         name="Custom Model",
@@ -147,13 +151,14 @@ def generate_blender_code(prompt, chat_history, context, system_prompt, api_key)
     )
 
     model = context.scene.gpt4_custom_model.strip() if context.scene.gpt4_model == "custom" else context.scene.gpt4_model
+    is_reasoning_model = model.startswith(("gpt-5", "o1", "o3", "o4"))
     payload = {
         "model": model,
         "input": messages,
-        "max_output_tokens": 2000,
+        "max_output_tokens": 8000 if is_reasoning_model else 2000,
         "text": {"verbosity": "low"},
     }
-    if model.startswith(("gpt-5", "o1", "o3", "o4")):
+    if is_reasoning_model:
         payload["reasoning"] = {"effort": "low"}
 
     response_data = _create_response(api_key, payload)
