@@ -136,7 +136,13 @@ class GPT4_PT_Panel(bpy.types.Panel):
 
         column.separator()
 
-        column.label(text="API Key override:")
+        column.label(text="API key:")
+        clipboard_key = normalize_api_key(context.window_manager.clipboard)
+        column.prop(context.scene, "gpt4_use_clipboard_api_key")
+        if context.scene.gpt4_use_clipboard_api_key:
+            column.label(text=f"Clipboard key: {api_key_label(clipboard_key)}")
+
+        column.label(text="Optional stored override:")
         key_row = column.row()
         key_row.scale_y = 1.4
         key_row.prop(context.scene, "gpt4_api_key_override", text="")
@@ -261,8 +267,12 @@ class GPT4_OT_Execute(bpy.types.Operator):
     )
 
     def execute(self, context):
-        api_key = normalize_api_key(context.scene.gpt4_api_key_override)
-        api_key_source = "sidebar override"
+        if context.scene.gpt4_use_clipboard_api_key:
+            api_key = normalize_api_key(context.window_manager.clipboard)
+            api_key_source = "clipboard"
+        else:
+            api_key = normalize_api_key(context.scene.gpt4_api_key_override)
+            api_key_source = "sidebar override"
         if not api_key:
             api_key = normalize_api_key(get_api_key(context, __name__))
             api_key_source = "add-on preferences"

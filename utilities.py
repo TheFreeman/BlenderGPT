@@ -52,6 +52,11 @@ def init_props(chat_message_type):
         maxlen=API_KEY_MAX_LENGTH,
         subtype="PASSWORD",
     )
+    bpy.types.Scene.gpt4_use_clipboard_api_key = bpy.props.BoolProperty(
+        name="Use API key from clipboard",
+        description="Read the API key directly from the clipboard when Execute is clicked.",
+        default=False,
+    )
     bpy.types.Scene.gpt4_button_pressed = bpy.props.BoolProperty(default=False)
 
 
@@ -61,6 +66,7 @@ def clear_props():
         "gpt4_model",
         "gpt4_chat_input",
         "gpt4_api_key_override",
+        "gpt4_use_clipboard_api_key",
         "gpt4_button_pressed",
     ):
         if hasattr(bpy.types.Scene, prop_name):
