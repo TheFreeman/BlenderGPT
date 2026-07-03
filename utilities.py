@@ -146,13 +146,15 @@ def generate_blender_code(prompt, chat_history, context, system_prompt, api_key)
         }
     )
 
+    model = context.scene.gpt4_custom_model.strip() if context.scene.gpt4_model == "custom" else context.scene.gpt4_model
     payload = {
-        "model": context.scene.gpt4_custom_model.strip() if context.scene.gpt4_model == "custom" else context.scene.gpt4_model,
+        "model": model,
         "input": messages,
         "max_output_tokens": 2000,
-        "reasoning": {"effort": "low"},
         "text": {"verbosity": "low"},
     }
+    if model.startswith(("gpt-5", "o1", "o3", "o4")):
+        payload["reasoning"] = {"effort": "low"}
 
     response_data = _create_response(api_key, payload)
     completion_text = _response_text(response_data)
