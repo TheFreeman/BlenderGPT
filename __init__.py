@@ -56,6 +56,12 @@ class GPT4_OT_DeleteMessage(bpy.types.Operator):
         context.scene.gpt4_chat_history.remove(self.message_index)
         return {'FINISHED'}
 
+
+class GPT4ChatMessage(bpy.types.PropertyGroup):
+    type: bpy.props.StringProperty()
+    content: bpy.props.StringProperty()
+
+
 class GPT4_OT_ShowCode(bpy.types.Operator):
     bl_idname = "gpt4.show_code"
     bl_label = "Show Code"
@@ -221,7 +227,7 @@ def register():
 
 
     bpy.types.VIEW3D_MT_mesh_add.append(menu_func)
-    init_props()
+    init_props(GPT4ChatMessage)
 
 
 def unregister():

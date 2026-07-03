@@ -8,19 +8,14 @@ import bpy
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
 
 
-class GPT4ChatMessage(bpy.types.PropertyGroup):
-    type: bpy.props.StringProperty()
-    content: bpy.props.StringProperty()
-
-
 def get_api_key(context, addon_name):
     preferences = context.preferences
     addon_prefs = preferences.addons[addon_name].preferences
     return addon_prefs.api_key
 
 
-def init_props():
-    bpy.types.Scene.gpt4_chat_history = bpy.props.CollectionProperty(type=GPT4ChatMessage)
+def init_props(chat_message_type):
+    bpy.types.Scene.gpt4_chat_history = bpy.props.CollectionProperty(type=chat_message_type)
     bpy.types.Scene.gpt4_model = bpy.props.EnumProperty(
         name="GPT Model",
         description="Select the GPT model to use",
