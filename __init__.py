@@ -132,6 +132,14 @@ class GPT4_PT_Panel(bpy.types.Panel):
                 delete_message_op.message_index = index
 
         column.separator()
+
+        column.label(text="API Key override:")
+        key_row = column.row()
+        key_row.scale_y = 1.4
+        key_row.prop(context.scene, "gpt4_api_key_override", text="")
+        override_key = normalize_api_key(context.scene.gpt4_api_key_override)
+        if override_key:
+            column.label(text=f"Using override key: {api_key_label(override_key)}")
         
         column.label(text="GPT Model:")
         model_row = column.row()
@@ -173,6 +181,29 @@ class GPT4_OT_ClearApiKey(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class GPT4_OT_ApplyApiKey(bpy.types.Operator):
+    bl_idname = "gpt4.apply_api_key"
+    bl_label = "Use Entered API Key"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        addon = context.preferences.addons.get(__name__)
+        if not addon:
+            self.report({'ERROR'}, "Add-on preferences were not found.")
+            return {'CANCELLED'}
+
+        api_key = normalize_api_key(addon.preferences.api_key_entry)
+        if not api_key:
+            self.report({'ERROR'}, "No API key entered.")
+            return {'CANCELLED'}
+
+        addon.preferences.api_key = api_key
+        addon.preferences.api_key_entry = ""
+        bpy.ops.wm.save_userpref()
+        self.report({'INFO'}, f"Saved API key: {api_key_label(api_key)}")
+        return {'FINISHED'}
+
+
 class GPT4_OT_Execute(bpy.types.Operator):
     bl_idname = "gpt4.send_message"
     bl_label = "Send Message"
@@ -185,8 +216,11 @@ class GPT4_OT_Execute(bpy.types.Operator):
     )
 
     def execute(self, context):
-        api_key = normalize_api_key(get_api_key(context, __name__))
-        api_key_source = "add-on preferences"
+        api_key = normalize_api_key(context.scene.gpt4_api_key_override)
+        api_key_source = "sidebar override"
+        if not api_key:
+            api_key = normalize_api_key(get_api_key(context, __name__))
+            api_key_source = "add-on preferences"
         if not api_key:
             api_key = normalize_api_key(os.getenv("OPENAI_API_KEY"))
             api_key_source = "OPENAI_API_KEY"
@@ -244,14 +278,21 @@ class GPT4AddonPreferences(bpy.types.AddonPreferences):
         default="",
         subtype="PASSWORD",
     )
+    api_key_entry: bpy.props.StringProperty(
+        name="New API Key",
+        description="Paste a new OpenAI API key, then click Use Entered API Key.",
+        default="",
+        subtype="PASSWORD",
+    )
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, "api_key")
         stored_key = normalize_api_key(self.api_key)
         env_key = normalize_api_key(os.getenv("OPENAI_API_KEY"))
         layout.label(text=f"Saved key: {api_key_label(stored_key)}")
         layout.label(text=f"Environment key: {api_key_label(env_key)}")
+        layout.prop(self, "api_key_entry")
+        layout.operator("gpt4.apply_api_key")
         layout.operator("gpt4.clear_api_key")
 
 def register():
@@ -261,6 +302,7 @@ def register():
     bpy.utils.register_class(GPT4_PT_Panel)
     bpy.utils.register_class(GPT4_OT_ClearChat)
     bpy.utils.register_class(GPT4_OT_ClearApiKey)
+    bpy.utils.register_class(GPT4_OT_ApplyApiKey)
     bpy.utils.register_class(GPT4_OT_ShowCode)
     bpy.utils.register_class(GPT4_OT_DeleteMessage)
 
@@ -278,6 +320,7 @@ def unregister():
     bpy.utils.unregister_class(GPT4_PT_Panel)
     bpy.utils.unregister_class(GPT4_OT_ClearChat)
     bpy.utils.unregister_class(GPT4_OT_ClearApiKey)
+    bpy.utils.unregister_class(GPT4_OT_ApplyApiKey)
     bpy.utils.unregister_class(GPT4_OT_ShowCode)
     bpy.utils.unregister_class(GPT4_OT_DeleteMessage)
     bpy.utils.unregister_class(GPT4ChatMessage)

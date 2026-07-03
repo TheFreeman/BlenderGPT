@@ -43,14 +43,25 @@ def init_props(chat_message_type):
         description="Enter your message",
         default="",
     )
+    bpy.types.Scene.gpt4_api_key_override = bpy.props.StringProperty(
+        name="API Key",
+        description="Optional API key for this Blender session. This takes precedence over add-on preferences.",
+        default="",
+        subtype="PASSWORD",
+    )
     bpy.types.Scene.gpt4_button_pressed = bpy.props.BoolProperty(default=False)
 
 
 def clear_props():
-    del bpy.types.Scene.gpt4_chat_history
-    del bpy.types.Scene.gpt4_model
-    del bpy.types.Scene.gpt4_chat_input
-    del bpy.types.Scene.gpt4_button_pressed
+    for prop_name in (
+        "gpt4_chat_history",
+        "gpt4_model",
+        "gpt4_chat_input",
+        "gpt4_api_key_override",
+        "gpt4_button_pressed",
+    ):
+        if hasattr(bpy.types.Scene, prop_name):
+            delattr(bpy.types.Scene, prop_name)
 
 
 def _response_text(response_data):
