@@ -131,6 +131,26 @@ def _create_response(api_key, payload):
         raise RuntimeError(f"Could not connect to OpenAI API: {error.reason}") from error
 
 
+def _reasoning_effort_for_model(model):
+    if model.startswith("gpt-5.5-pro"):
+        return "medium"
+    return "low"
+
+
+def _create_response_with_effort_fallback(api_key, payload):
+    try:
+        return _create_response(api_key, payload)
+    except RuntimeError as error:
+        message = str(error)
+        if "Unsupported value" not in message or "'low'" not in message or "reasoning" not in payload:
+            raise
+
+        payload = dict(payload)
+        payload["reasoning"] = dict(payload["reasoning"])
+        payload["reasoning"]["effort"] = "medium"
+        return _create_response(api_key, payload)
+
+
 def generate_blender_code(prompt, chat_history, context, system_prompt, api_key):
     messages = [{"role": "system", "content": system_prompt}]
     for message in list(chat_history)[-10:]:
@@ -159,9 +179,9 @@ def generate_blender_code(prompt, chat_history, context, system_prompt, api_key)
         "text": {"verbosity": "low"},
     }
     if is_reasoning_model:
-        payload["reasoning"] = {"effort": "low"}
+        payload["reasoning"] = {"effort": _reasoning_effort_for_model(model)}
 
-    response_data = _create_response(api_key, payload)
+    response_data = _create_response_with_effort_fallback(api_key, payload)
     completion_text = _response_text(response_data)
     return _extract_python_code(completion_text) if completion_text else None
 
