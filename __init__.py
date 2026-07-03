@@ -159,6 +159,20 @@ class GPT4_OT_ClearChat(bpy.types.Operator):
         context.scene.gpt4_chat_history.clear()
         return {'FINISHED'}
 
+
+class GPT4_OT_ClearApiKey(bpy.types.Operator):
+    bl_idname = "gpt4.clear_api_key"
+    bl_label = "Clear Saved API Key"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        addon = context.preferences.addons.get(__name__)
+        if addon:
+            addon.preferences.api_key = ""
+            bpy.ops.wm.save_userpref()
+        return {'FINISHED'}
+
+
 class GPT4_OT_Execute(bpy.types.Operator):
     bl_idname = "gpt4.send_message"
     bl_label = "Send Message"
@@ -234,6 +248,11 @@ class GPT4AddonPreferences(bpy.types.AddonPreferences):
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "api_key")
+        stored_key = normalize_api_key(self.api_key)
+        env_key = normalize_api_key(os.getenv("OPENAI_API_KEY"))
+        layout.label(text=f"Saved key: {api_key_label(stored_key)}")
+        layout.label(text=f"Environment key: {api_key_label(env_key)}")
+        layout.operator("gpt4.clear_api_key")
 
 def register():
     bpy.utils.register_class(GPT4ChatMessage)
@@ -241,6 +260,7 @@ def register():
     bpy.utils.register_class(GPT4_OT_Execute)
     bpy.utils.register_class(GPT4_PT_Panel)
     bpy.utils.register_class(GPT4_OT_ClearChat)
+    bpy.utils.register_class(GPT4_OT_ClearApiKey)
     bpy.utils.register_class(GPT4_OT_ShowCode)
     bpy.utils.register_class(GPT4_OT_DeleteMessage)
 
@@ -257,6 +277,7 @@ def unregister():
     bpy.utils.unregister_class(GPT4_OT_Execute)
     bpy.utils.unregister_class(GPT4_PT_Panel)
     bpy.utils.unregister_class(GPT4_OT_ClearChat)
+    bpy.utils.unregister_class(GPT4_OT_ClearApiKey)
     bpy.utils.unregister_class(GPT4_OT_ShowCode)
     bpy.utils.unregister_class(GPT4_OT_DeleteMessage)
     bpy.utils.unregister_class(GPT4ChatMessage)
