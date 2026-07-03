@@ -6,6 +6,7 @@ import urllib.request
 import bpy
 
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
+API_KEY_MAX_LENGTH = 4096
 
 
 def get_api_key(context, addon_name):
@@ -42,11 +43,13 @@ def init_props(chat_message_type):
         name="Message",
         description="Enter your message",
         default="",
+        maxlen=8192,
     )
     bpy.types.Scene.gpt4_api_key_override = bpy.props.StringProperty(
         name="API Key",
         description="Optional API key for this Blender session. This takes precedence over add-on preferences.",
         default="",
+        maxlen=API_KEY_MAX_LENGTH,
         subtype="PASSWORD",
     )
     bpy.types.Scene.gpt4_button_pressed = bpy.props.BoolProperty(default=False)

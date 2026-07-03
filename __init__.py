@@ -3,6 +3,9 @@ import bpy
 import bpy.props
 
 from .utilities import *
+
+API_KEY_MAX_LENGTH = globals().get("API_KEY_MAX_LENGTH", 4096)
+
 bl_info = {
     "name": "GPT Blender Assistant",
     "blender": (4, 2, 0),
@@ -48,8 +51,8 @@ def api_key_label(api_key):
     if not api_key:
         return "empty"
     if len(api_key) <= 8:
-        return "***" + api_key[-2:]
-    return api_key[:7] + "..." + api_key[-4:]
+        return "***" + api_key[-2:] + f" ({len(api_key)} chars)"
+    return api_key[:7] + "..." + api_key[-4:] + f" ({len(api_key)} chars)"
 
 
 class GPT4_OT_DeleteMessage(bpy.types.Operator):
@@ -137,6 +140,8 @@ class GPT4_PT_Panel(bpy.types.Panel):
         key_row = column.row()
         key_row.scale_y = 1.4
         key_row.prop(context.scene, "gpt4_api_key_override", text="")
+        paste_row = column.row()
+        paste_row.operator("gpt4.paste_api_key_override")
         override_key = normalize_api_key(context.scene.gpt4_api_key_override)
         if override_key:
             column.label(text=f"Using override key: {api_key_label(override_key)}")
@@ -204,6 +209,45 @@ class GPT4_OT_ApplyApiKey(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class GPT4_OT_PasteApiKeyOverride(bpy.types.Operator):
+    bl_idname = "gpt4.paste_api_key_override"
+    bl_label = "Paste Full Key From Clipboard"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        api_key = normalize_api_key(context.window_manager.clipboard)
+        if not api_key:
+            self.report({'ERROR'}, "Clipboard does not contain an API key.")
+            return {'CANCELLED'}
+
+        context.scene.gpt4_api_key_override = api_key
+        self.report({'INFO'}, f"Using override API key: {api_key_label(api_key)}")
+        return {'FINISHED'}
+
+
+class GPT4_OT_PasteSavedApiKey(bpy.types.Operator):
+    bl_idname = "gpt4.paste_saved_api_key"
+    bl_label = "Paste Clipboard As Saved API Key"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        addon = context.preferences.addons.get(__name__)
+        if not addon:
+            self.report({'ERROR'}, "Add-on preferences were not found.")
+            return {'CANCELLED'}
+
+        api_key = normalize_api_key(context.window_manager.clipboard)
+        if not api_key:
+            self.report({'ERROR'}, "Clipboard does not contain an API key.")
+            return {'CANCELLED'}
+
+        addon.preferences.api_key = api_key
+        addon.preferences.api_key_entry = ""
+        bpy.ops.wm.save_userpref()
+        self.report({'INFO'}, f"Saved API key: {api_key_label(api_key)}")
+        return {'FINISHED'}
+
+
 class GPT4_OT_Execute(bpy.types.Operator):
     bl_idname = "gpt4.send_message"
     bl_label = "Send Message"
@@ -213,6 +257,7 @@ class GPT4_OT_Execute(bpy.types.Operator):
         name="Command",
         description="Enter the natural language command",
         default="",
+        maxlen=8192,
     )
 
     def execute(self, context):
@@ -276,12 +321,14 @@ class GPT4AddonPreferences(bpy.types.AddonPreferences):
         name="API Key",
         description="Enter your OpenAI API Key",
         default="",
+        maxlen=API_KEY_MAX_LENGTH,
         subtype="PASSWORD",
     )
     api_key_entry: bpy.props.StringProperty(
         name="New API Key",
         description="Paste a new OpenAI API key, then click Use Entered API Key.",
         default="",
+        maxlen=API_KEY_MAX_LENGTH,
         subtype="PASSWORD",
     )
 
@@ -293,6 +340,7 @@ class GPT4AddonPreferences(bpy.types.AddonPreferences):
         layout.label(text=f"Environment key: {api_key_label(env_key)}")
         layout.prop(self, "api_key_entry")
         layout.operator("gpt4.apply_api_key")
+        layout.operator("gpt4.paste_saved_api_key")
         layout.operator("gpt4.clear_api_key")
 
 def register():
@@ -303,6 +351,8 @@ def register():
     bpy.utils.register_class(GPT4_OT_ClearChat)
     bpy.utils.register_class(GPT4_OT_ClearApiKey)
     bpy.utils.register_class(GPT4_OT_ApplyApiKey)
+    bpy.utils.register_class(GPT4_OT_PasteApiKeyOverride)
+    bpy.utils.register_class(GPT4_OT_PasteSavedApiKey)
     bpy.utils.register_class(GPT4_OT_ShowCode)
     bpy.utils.register_class(GPT4_OT_DeleteMessage)
 
@@ -321,6 +371,8 @@ def unregister():
     bpy.utils.unregister_class(GPT4_OT_ClearChat)
     bpy.utils.unregister_class(GPT4_OT_ClearApiKey)
     bpy.utils.unregister_class(GPT4_OT_ApplyApiKey)
+    bpy.utils.unregister_class(GPT4_OT_PasteApiKeyOverride)
+    bpy.utils.unregister_class(GPT4_OT_PasteSavedApiKey)
     bpy.utils.unregister_class(GPT4_OT_ShowCode)
     bpy.utils.unregister_class(GPT4_OT_DeleteMessage)
     bpy.utils.unregister_class(GPT4ChatMessage)
