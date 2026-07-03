@@ -104,13 +104,14 @@ class GPT4_PT_Panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        column = layout.column(align=True)
+        column = layout.column(align=False)
 
         column.label(text="Chat history:")
         box = column.box()
         for index, message in enumerate(context.scene.gpt4_chat_history):
             if message.type == 'assistant':
                 row = box.row()
+                row.scale_y = 1.6
                 row.label(text="Assistant: ")
                 show_code_op = row.operator("gpt4.show_code", text="Show Code")
                 show_code_op.code = message.content
@@ -118,6 +119,7 @@ class GPT4_PT_Panel(bpy.types.Panel):
                 delete_message_op.message_index = index
             else:
                 row = box.row()
+                row.scale_y = 1.6
                 row.label(text=f"User: {message.content}")
                 delete_message_op = row.operator("gpt4.delete_message", text="", icon="TRASH", emboss=False)
                 delete_message_op.message_index = index
@@ -125,12 +127,17 @@ class GPT4_PT_Panel(bpy.types.Panel):
         column.separator()
         
         column.label(text="GPT Model:")
-        column.prop(context.scene, "gpt4_model", text="")
+        model_row = column.row()
+        model_row.scale_y = 1.8
+        model_row.prop(context.scene, "gpt4_model", text="")
 
         column.label(text="Enter your message:")
-        column.prop(context.scene, "gpt4_chat_input", text="")
+        input_row = column.row()
+        input_row.scale_y = 2.4
+        input_row.prop(context.scene, "gpt4_chat_input", text="")
         button_label = "Please wait...(this might take some time)" if context.scene.gpt4_button_pressed else "Execute"
         row = column.row(align=True)
+        row.scale_y = 1.8
         row.operator("gpt4.send_message", text=button_label)
         row.operator("gpt4.clear_chat", text="Clear Chat")
 
