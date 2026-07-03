@@ -44,6 +44,13 @@ for c in range(0,count):
 ```"""
 
 
+def api_key_label(api_key):
+    if not api_key:
+        return "empty"
+    if len(api_key) <= 8:
+        return "***" + api_key[-2:]
+    return api_key[:7] + "..." + api_key[-4:]
+
 
 class GPT4_OT_DeleteMessage(bpy.types.Operator):
     bl_idname = "gpt4.delete_message"
@@ -201,7 +208,7 @@ class GPT4_OT_Execute(bpy.types.Operator):
         except Exception as e:
             message = str(e)
             if "OpenAI API error 401" in message:
-                message += f" Used key from {api_key_source}: {api_key_fingerprint(api_key)}"
+                message += f" Used key from {api_key_source}: {api_key_label(api_key)}"
             self.report({'ERROR'}, message)
             return {'CANCELLED'}
         finally:
