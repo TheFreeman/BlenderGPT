@@ -14,6 +14,10 @@ def get_api_key(context, addon_name):
     return addon_prefs.api_key
 
 
+def normalize_api_key(api_key):
+    return re.sub(r"\s+", "", api_key or "")
+
+
 def init_props(chat_message_type):
     bpy.types.Scene.gpt4_chat_history = bpy.props.CollectionProperty(type=chat_message_type)
     bpy.types.Scene.gpt4_model = bpy.props.EnumProperty(

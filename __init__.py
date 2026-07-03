@@ -157,9 +157,9 @@ class GPT4_OT_Execute(bpy.types.Operator):
     )
 
     def execute(self, context):
-        api_key = get_api_key(context, __name__)
+        api_key = normalize_api_key(get_api_key(context, __name__))
         if not api_key:
-            api_key = os.getenv("OPENAI_API_KEY")
+            api_key = normalize_api_key(os.getenv("OPENAI_API_KEY"))
 
         if not api_key:
             self.report({'ERROR'}, "No API key detected. Please set the API key in the addon preferences.")
